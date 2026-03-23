@@ -3,7 +3,7 @@ name = "coder-buddy"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.11"q
+requires-python = ">=3.11"
 dependencies = [
     "groq>=0.31.0",
     "langchain>=0.3.27",
