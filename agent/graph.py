@@ -1,32 +1,15 @@
 from dotenv import load_dotenv
-
 load_dotenv()
 
 from langchain_groq import ChatGroq
-
 llm = ChatGroq(model="openai/gpt-oss-120b")
 
-from pydantic import BaseModel, Field
+from prompts import *
+from states import *
 
 user_prompt = "create a simple calculator web application"
 
-prompt = f"""
-You are the PLANNER agent. Convert the user prompt into a COMPLETE engineering project plan
-
-User request: {user_prompt}
-"""
-
-class File(BaseModel):
-    path: str = Field(description="path to file to be created or modified")
-    purpose: str = Field(description="purpose of the file, e.g. 'main application logic', 'data processing module', etc.")
-
-class Plan(BaseModel):
-    name: str = Field(description="the name of the app to be built")
-    description: str = Field(description="the description of the app to be built")
-    techstack: str = Field(description="the techstack to be used for the app")
-    features: list[str] = Field(
-        description="the list of features to be used for the app, e.g. 'user authentication', 'data_visualization', etc.")
-    files: list[File] = Field(description="a list of files to be created, each with a 'path' and 'purpose'")
+prompt = planner_prompt(user_prompt)
 
 resp = llm.with_structured_output(Plan).invoke(prompt)
 
