@@ -1,9 +1,5 @@
 from dotenv import load_dotenv
-from langchain_core.globals import set_verbose, set_debug
 load_dotenv()
-
-set_debug(True)
-set_verbose(True)
 
 from langchain_groq import ChatGroq
 llm = ChatGroq(model="openai/gpt-oss-120b")
@@ -12,7 +8,12 @@ from agent.prompts import *
 from agent.states import *
 from langgraph.constants import END
 from langgraph.graph import StateGraph
-# from agent.tools import write_file, read_file, get_current_directory, list_files
+from agent.tools import *
+from langchain_core.globals import set_verbose, set_debug
+from langchain.agents import create_agent
+
+set_debug(True)
+set_verbose(True)
 
 def planner_agent(state: dict) -> dict:
     user_prompt = state["user_prompt"]
@@ -36,15 +37,22 @@ def coder_agent(state: dict) -> dict:
     steps = state['task_plan'].implementation_steps
     current_step_idx = 0
     current_task = steps[current_step_idx]
-
+    existing_content = read_file.run(current_task.filepath)
     user_prompt = (
         f"Task: {current_task.task_description}\n"
+        f"File: {current_task.filepath}\n"
+        f"Existing content:\n{existing_content}\n"
+        "Use write_file(path, content) to save your changes."
     )
-
+    coder_tools = [read_file, write_file, list_files, get_current_directory]
     system_prompt = coder_system_prompt()
-    resp = llm.invoke(system_prompt + user_prompt)
+    react_agent = create_agent(llm, coder_tools)
+    react_agent.invoke({"messages": [{"role": "system", "content": system_prompt},
+                                     {"role": "user", "content": user_prompt}]})
 
-    return {"code": resp.content}
+
+
+    return {}
 
 graph = StateGraph(dict)
 graph.add_node("planner", planner_agent)
